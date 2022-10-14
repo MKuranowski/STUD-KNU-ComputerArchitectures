@@ -1,3 +1,7 @@
+# Student: Mikolaj Kuranowski
+# Student ID: 2020427681
+# Date: 2022-10-14
+
 # x10 - x15 -th fibonacci number
 # x11 - x15+1 -th fibonacci number
 # x12 - index of target fibonacci number

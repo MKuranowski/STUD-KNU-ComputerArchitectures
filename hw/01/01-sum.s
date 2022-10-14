@@ -1,3 +1,7 @@
+# Student: Mikolaj Kuranowski
+# Student ID: 2020427681
+# Date: 2022-10-14
+
 	mv x10, zero
 	li x11, 2
 	li x12, 1000

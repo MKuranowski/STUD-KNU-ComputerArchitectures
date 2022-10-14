@@ -1,11 +1,18 @@
+# Student: Mikolaj Kuranowski
+# Student ID: 2020427681
+# Date: 2022-10-14
+
 _start:
+	# Calculate 6!
 	li a0, 6
 	call factorial
 
+	# Print the result
 	mv a0, a1
 	li a7, 36
 	ecall
 
+	# Exit the program
 	li a7, 10
 	ecall
 
@@ -17,8 +24,6 @@ _start:
 # ==========
 # Return value:
 # - a1: n!
-# ==========
-# Values stored in a0-a7 and t0-t6 may be destroyed by the call
 # ==========
 factorial:
 	# Base recursion case

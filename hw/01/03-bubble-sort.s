@@ -1,3 +1,7 @@
+# Student: Mikolaj Kuranowski
+# Student ID: 2020427681
+# Date: 2022-10-14
+
 _start:
 	# Sort the numbers
 	la a0, arr
@@ -22,6 +26,7 @@ _start:
 	addi s0, s0, 4
 	blt s0, s1, .loop
 
+	# Exit the program
 	li a7, 10
 	ecall
 
