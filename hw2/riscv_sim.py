@@ -309,6 +309,12 @@ class Processor:
     def main_loop(self) -> None:
         while self.registers[31] != 0xDEADBEEF:
             instruction = self.instruction_fetch(self.pc)
+
+            # XXX: example programs don't properly halt
+            if not instruction:
+                print("\x1B[31mProgram halted without 0xDEADBEEF in x31\x1B[0m", file=sys.stderr)
+                return
+
             decoded = self.instruction_decode(instruction)
             alu_result = self.execute(decoded)
             if decoded.op == OP.STORE or decoded.op == OP.LOAD:
