@@ -13,11 +13,11 @@ def twos_com(n):
     s = bin(n & int("1"* 32, 2))[2:]
     return ("{0:0>%s}" % (32)).format(s)
 
-riscv_asm = sys.argv[1]
-machine_code = sys.argv[2]
+riscv_asm = sys.argv[1] if len(sys.argv) >= 2 else None
+machine_code = sys.argv[2] if len(sys.argv) >= 3 else None
 
-_fp_read = open(riscv_asm, "r")
-_fp_write = open(machine_code, "w")
+_fp_read = open(riscv_asm, "r") if riscv_asm else sys.stdin
+_fp_write = open(machine_code, "w") if machine_code else sys.stdout
 
 r_format = ['add', 'sub', 'mul', 'div', 'rem', 'or', 'xor', 'and', 'sll', 'srl']
 i_format = ['lw', 'addi', 'slli', 'srli', 'xori', 'ori', 'andi', 'jalr']
@@ -37,7 +37,7 @@ for line in _fp_read:
     line_cnt += 1
     if ":" in line:
         labels[line.split(':')[0]] = line_cnt
-    
+
 _fp_read.seek(0)
 
 line_cnt = 0
@@ -85,9 +85,9 @@ for line in _fp_read:
         rd1 = format(bin(int(temp[1][1:]))[2:], '0>5')
         imm = twos_com((labels[temp[2]] - line_cnt) * 4)
         _fp_write.write(imm[-21] + imm[-11:-1] + imm[-12] + imm[-20:-12] + rd1 + '1101111')
-    
+
     _fp_write.write('\n')
-    
+
 
 _fp_read.close()
 _fp_write.close()
@@ -109,7 +109,7 @@ JAL, JALR
 '''
 
 '''
-LW      : imm(12) | rs1(5) | 010 | rd(5) | 0000011 
+LW      : imm(12) | rs1(5) | 010 | rd(5) | 0000011
 SW      : imm[11:5] | rs2 | rs1 | 010 | imm[4:0] | 0100011
 '''
 
