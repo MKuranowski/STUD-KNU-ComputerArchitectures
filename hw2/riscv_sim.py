@@ -9,6 +9,7 @@ IMEM_SIZE = 32 * 1024
 DMEM_SIZE = 32 * 1024
 BYTE_ORDER: Literal["big", "little"] = "big"
 
+
 class int32(int):
     """int32 represents a value stored in a register: a 32-bit integer"""
 
@@ -60,21 +61,21 @@ class BranchSelector(IntEnum):
 class OP(IntEnum):
     ALU_REG = 0b0110011
     ALU_IMM = 0b0010011
-    LOAD    = 0b0000011
-    STORE   = 0b0100011
-    BRANCH  = 0b1100011
-    JAL     = 0b1101111
-    JALR    = 0b1100111
-    LUI     = 0b0110111
-    AUIPC   = 0b0010111
+    LOAD = 0b0000011
+    STORE = 0b0100011
+    BRANCH = 0b1100011
+    JAL = 0b1101111
+    JALR = 0b1100111
+    LUI = 0b0110111
+    AUIPC = 0b0010111
 
 
 @dataclass
 class ControlFlags:
     pc_sel: bool = False  # If True, use ALU output instead of PC+4 for next PC
-    a_sel: bool = False   # If True, use PC instead of decoded `a` for ALU input
-    b_sel: bool = False   # If True, use IMM instead of decoded `b` for ALU input
-    br_un: bool = False   # If True, use unsigned comparison instead of signed
+    a_sel: bool = False  # If True, use PC instead of decoded `a` for ALU input
+    b_sel: bool = False  # If True, use IMM instead of decoded `b` for ALU input
+    br_un: bool = False  # If True, use unsigned comparison instead of signed
     wb_sel: WBSelector = WBSelector.NONE  # Decides which value to store in dest register
 
 
@@ -94,7 +95,7 @@ def sign_extend(x: int, bits: int) -> int:
     if bits >= 32:
         return x
 
-    is_neg = x & (1 << (bits-1))
+    is_neg = x & (1 << (bits - 1))
     if not is_neg:
         return x
 
@@ -116,7 +117,7 @@ class Processor:
         self.reset_state()
 
     def instruction_fetch(self, address: int) -> int:
-        return int.from_bytes(self.imem[address:address+4], BYTE_ORDER)
+        return int.from_bytes(self.imem[address : address + 4], BYTE_ORDER)
 
     @staticmethod
     def reconstruct_i_imm(i: int) -> int:
@@ -138,10 +139,7 @@ class Processor:
         bits_5_10 = (i >> 25) & 0x1F
         bit_11 = (i >> 7) & 0x1
         bit_12 = (i >> 31) & 0x1
-        return (bits_1_4 << 1) \
-            | (bits_5_10 << 5) \
-            | (bit_11 << 11) \
-            | (bit_12 << 12)
+        return (bits_1_4 << 1) | (bits_5_10 << 5) | (bit_11 << 11) | (bit_12 << 12)
 
     @staticmethod
     def reconstruct_j_imm(i: int) -> int:
@@ -149,10 +147,7 @@ class Processor:
         bit_11 = (i >> 19) & 0x1
         bits_12_19 = (i >> 12) & 0xFF
         bit_20 = (i >> 31) & 0x1
-        return (bits_1_10 << 1) \
-            | (bit_11 << 11) \
-            | (bits_12_19 << 12) \
-            | (bit_20 << 20)
+        return (bits_1_10 << 1) | (bit_11 << 11) | (bits_12_19 << 12) | (bit_20 << 20)
 
     def instruction_decode(self, instruction: int) -> DecodedInstruction:
         op = OP(instruction & 0b111_1111)
@@ -282,10 +277,13 @@ class Processor:
     def memory(self, address: int, data: int, do_write: bool) -> int:
         # NOTE: Always reads/writes words
         if do_write:
-            self.dmem[address:address+4] = int32(data).to_bytes(4, BYTE_ORDER)
-            self.touched_memory.union(range(address, address+4))
+            self.dmem[address : address + 4] = int32(data).to_bytes(4, BYTE_ORDER)
+            self.touched_memory.union(range(address, address + 4))
         else:
-            data = int.from_bytes(self.dmem[address:address+4], BYTE_ORDER,)
+            data = int.from_bytes(
+                self.dmem[address : address + 4],
+                BYTE_ORDER,
+            )
         return data
 
     def write_back(self, memory: int, alu: int, register: int, selector: WBSelector) -> None:
@@ -342,11 +340,11 @@ class Processor:
         print("Processor's clock cycles:", self.clock)
 
     def dump_registers(self) -> None:
-        print(">>>>>>>>[REGISTER DUMP]<<<<<<<");
-        print(f"PC: = {self.pc}");
+        print(">>>>>>>>[REGISTER DUMP]<<<<<<<")
+        print(f"PC: = {self.pc}")
         for register_number, register_value in enumerate(self.registers):
             print(f"x{register_number:02d} = {register_value.as_signed()}")
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     def dump_memory(self) -> None:
         print(">>>>>>>>[MEMORY DUMP]<<<<<<<<<")
@@ -358,7 +356,7 @@ class Processor:
         address = 0
         for line in program:
             instruction = int(line.strip(), 2)
-            self.imem[address:address+4] = instruction.to_bytes(4, BYTE_ORDER)
+            self.imem[address : address + 4] = instruction.to_bytes(4, BYTE_ORDER)
             address += 4
 
     def run(self, program: Iterable[str]) -> None:
