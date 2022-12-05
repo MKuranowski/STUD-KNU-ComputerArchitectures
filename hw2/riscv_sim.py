@@ -1,23 +1,26 @@
-from ctypes import c_int32, c_uint32
-from typing import Iterable
+from typing import Iterable, Literal
 
 REGISTERS = 32
 IMEM_SIZE = 32 * 1024
 DMEM_SIZE = 32 * 1024
+BYTE_ORDER: Literal["big", "little"] = "big"
 
 
-class RegisterValue(int):
-    """RegisterValue represents a value stored in a register: a 32-bit integer"""
+class int32(int):
+    """int32 represents a value stored in a register: a 32-bit integer"""
 
     @classmethod
-    def from_int(cls, x: int) -> "RegisterValue":
-        return cls(c_uint32(x).value)
+    def from_int(cls, x: int) -> "int32":
+        return cls(x % 2**32)
 
     def as_unsigned(self) -> int:
-        return c_uint32(self).value
+        return self
 
     def as_signed(self) -> int:
-        return c_int32(self).value
+        if self & 0x8000_0000:
+            return self - 2**32  # negative
+        else:
+            return self  # non-negative
 
 
 class Processor:
@@ -25,7 +28,7 @@ class Processor:
 
     clock: int
     pc: int
-    registers: list[RegisterValue]
+    registers: list[int32]
     imem: bytearray
     dmem: bytearray
     touched_memory: set[int]
@@ -42,8 +45,14 @@ class Processor:
     def execute(self, a: int, b: int, alu_selector: int) -> int:
         raise NotImplementedError
 
-    def memory(self, address: int, data: int, mem_rw: int) -> int:
-        raise NotImplementedError
+    def memory(self, address: int, data: int, do_write: bool) -> int:
+        # NOTE: Always reads/writes words
+        if do_write:
+            self.dmem[address:address+4] = int32(data).to_bytes(4, BYTE_ORDER)
+            self.touched_memory.union(range(address, address+4))
+        else:
+            data = int.from_bytes(self.dmem[address:address+4], BYTE_ORDER)
+        return data
 
     def write_back(self, address: int, address_rd: int, reg_wen: int) -> int:
         raise NotImplementedError
@@ -54,7 +63,7 @@ class Processor:
     def reset_state(self) -> None:
         self.clock = 0
         self.pc = 0
-        self.registers = [RegisterValue.from_int(0) for _ in range(REGISTERS)]
+        self.registers = [int32.from_int(0) for _ in range(REGISTERS)]
         self.imem = bytearray(IMEM_SIZE)
         self.dmem = bytearray(DMEM_SIZE)
         self.touched_memory = set()
@@ -80,14 +89,18 @@ class Processor:
             self.instruction_fetch(self.pc)
             self.instruction_decode(0, 0)
             self.execute(0, 0, 0)
-            self.memory(0, 0, 0)
+            self.memory(0, 0, False)
             self.write_back(0, 0, 0)
             self.control_unit(0, 0, 0)
 
             self.clock += 1
 
     def load_program(self, program: Iterable[str]) -> None:
-        raise NotImplementedError
+        address = 0
+        for line in program:
+            instruction = int(line.strip(), 2)
+            self.imem[address:address+4] = instruction.to_bytes(4, BYTE_ORDER)
+            address += 4
 
     def run(self, program: Iterable[str]) -> None:
         self.reset_state()
