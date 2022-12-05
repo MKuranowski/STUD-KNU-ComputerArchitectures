@@ -78,6 +78,13 @@ class ControlFlags:
     br_un: bool = False  # If True, use unsigned comparison instead of signed
     wb_sel: WBSelector = WBSelector.NONE  # Decides which value to store in dest register
 
+    def clear(self) -> None:
+        self.pc_sel = False
+        self.a_sel = False
+        self.b_sel = False
+        self.br_un = False
+        self.wb_sel = WBSelector.NONE
+
 
 class DecodedInstruction(NamedTuple):
     op: OP
@@ -88,27 +95,14 @@ class DecodedInstruction(NamedTuple):
     rd_number: int
     imm: int
 
-    flags: ControlFlags
-
-
-def sign_extend(x: int, bits: int) -> int:
-    if bits >= 32:
-        return x
-
-    is_neg = x & (1 << (bits - 1))
-    if not is_neg:
-        return x
-
-    mask = (1 << bits) - 1
-    return (0xFFFF_FFFF ^ mask) | x
-
 
 class Processor:
-    __slots__ = ("clock", "pc", "registers", "imem", "dmem", "touched_memory")
+    __slots__ = ("clock", "pc", "registers", "flags", "imem", "dmem", "touched_memory")
 
     clock: int
     pc: int
     registers: list[int32]
+    flags: ControlFlags
     imem: bytearray
     dmem: bytearray
     touched_memory: set[int]
@@ -156,7 +150,6 @@ class Processor:
         rs2_value = int32(0)
         rd_number = 0
         imm = 0
-        flags = ControlFlags()
 
         match op:
             case OP.ALU_REG:  # R-Type instructions
@@ -165,7 +158,7 @@ class Processor:
                 rs2_value = self.registers[(instruction >> 20) & 0b1_1111]
                 rd_number = (instruction >> 7) & 0b1_1111
 
-                flags.wb_sel = WBSelector.ALU
+                self.flags.wb_sel = WBSelector.ALU
 
             case OP.ALU_IMM | OP.LOAD | OP.JALR:  # I-type instructions
                 funct = (instruction >> 12) & 0b111
@@ -173,14 +166,14 @@ class Processor:
                 rd_number = (instruction >> 7) & 0b1_1111
                 imm = self.reconstruct_i_imm(instruction)
 
-                flags.pc_sel = op == op.JALR
-                flags.b_sel = True
+                self.flags.pc_sel = op == op.JALR
+                self.flags.b_sel = True
                 if op == OP.LOAD:
-                    flags.wb_sel = WBSelector.MEMORY
+                    self.flags.wb_sel = WBSelector.MEMORY
                 elif op == op.JALR:
-                    flags.wb_sel = WBSelector.PC_PLUS_4
+                    self.flags.wb_sel = WBSelector.PC_PLUS_4
                 else:
-                    flags.wb_sel = WBSelector.ALU
+                    self.flags.wb_sel = WBSelector.ALU
 
             case OP.STORE:  # S-type instructions
                 funct = (instruction >> 12) & 0b111
@@ -188,7 +181,7 @@ class Processor:
                 rs2_value = self.registers[(instruction >> 20) & 0b1_1111]
                 imm = self.reconstruct_s_imm(instruction)
 
-                flags.b_sel = True
+                self.flags.b_sel = True
 
             case OP.BRANCH:  # B-type instructions
                 funct = (instruction >> 12) & 0b111
@@ -196,29 +189,29 @@ class Processor:
                 rs2_value = self.registers[(instruction >> 20) & 0b1_1111]
                 imm = self.reconstruct_b_imm(instruction)
 
-                flags.a_sel = True
-                flags.b_sel = True
-                flags.br_un = funct & 0b010 != 0
+                self.flags.a_sel = True
+                self.flags.b_sel = True
+                self.flags.br_un = funct & 0b010 != 0
 
             case OP.JAL:  # J-type instructions
                 rd_number = (instruction >> 7) & 0b1_1111
                 imm = self.reconstruct_j_imm(instruction)
 
-                flags.pc_sel = True
-                flags.a_sel = True
-                flags.b_sel = True
-                flags.wb_sel = WBSelector.PC_PLUS_4
+                self.flags.pc_sel = True
+                self.flags.a_sel = True
+                self.flags.b_sel = True
+                self.flags.wb_sel = WBSelector.PC_PLUS_4
 
             case OP.LUI | OP.AUIPC:  # U-type instructions
                 # NOTE: rs1_value is zero on entry to this function
                 rd_number = (instruction >> 7) & 0b1_1111
                 imm = self.reconstruct_u_imm(instruction)
 
-                flags.a_sel = op == OP.AUIPC
-                flags.b_sel = True
-                flags.wb_sel = WBSelector.ALU
+                self.flags.a_sel = op == OP.AUIPC
+                self.flags.b_sel = True
+                self.flags.wb_sel = WBSelector.ALU
 
-        return DecodedInstruction(op, funct, rs1_value, rs2_value, rd_number, imm, flags)
+        return DecodedInstruction(op, funct, rs1_value, rs2_value, rd_number, imm)
 
     @staticmethod
     def run_alu(a: int, b: int, alu_selector: ALUSelector) -> int:
@@ -244,11 +237,10 @@ class Processor:
             case ALUSelector.REM:
                 return a % b
 
-    @staticmethod
-    def run_branch_selector(i: DecodedInstruction) -> None:
+    def run_branch_selector(self, i: DecodedInstruction) -> None:
         # Perform the comparison
         eq = i.rs1_value == i.rs2_value
-        if i.flags.br_un:
+        if self.flags.br_un:
             lt = i.rs1_value.as_unsigned() < i.rs2_value.as_unsigned()
         else:
             lt = i.rs1_value.as_signed() < i.rs2_value.as_signed()
@@ -256,21 +248,21 @@ class Processor:
         # Set pc_sel according to the result
         match BranchSelector(i.funct):
             case BranchSelector.BEQ:
-                i.flags.pc_sel = eq
+                self.flags.pc_sel = eq
             case BranchSelector.BNE:
-                i.flags.pc_sel = not eq
+                self.flags.pc_sel = not eq
             case BranchSelector.BLT | BranchSelector.BLTU:
-                i.flags.pc_sel = lt
+                self.flags.pc_sel = lt
             case BranchSelector.BGE | BranchSelector.BGEU:
-                i.flags.pc_sel = not lt
+                self.flags.pc_sel = not lt
 
     def execute(self, i: DecodedInstruction) -> int:
         if i.op == OP.BRANCH:
             self.run_branch_selector(i)
 
         return self.run_alu(
-            self.pc if i.flags.a_sel else i.rs1_value.as_unsigned(),
-            i.imm if i.flags.b_sel else i.rs2_value.as_unsigned(),
+            self.pc if self.flags.a_sel else i.rs1_value.as_unsigned(),
+            i.imm if self.flags.b_sel else i.rs2_value.as_unsigned(),
             ALUSelector(i.funct),
         )
 
@@ -286,12 +278,12 @@ class Processor:
             )
         return data
 
-    def write_back(self, memory: int, alu: int, register: int, selector: WBSelector) -> None:
+    def write_back(self, memory: int, alu: int, register: int) -> None:
         # Don't write to x0
         if register == 0:
             return
 
-        match selector:
+        match self.flags.wb_sel:
             case WBSelector.NONE:
                 pass
             case WBSelector.ALU:
@@ -301,11 +293,12 @@ class Processor:
             case WBSelector.PC_PLUS_4:
                 self.registers[register] = int32.from_int(self.pc + 4)
 
-    def control_unit(self, pc_sel: bool, alu_result: int) -> None:
-        self.pc = alu_result if pc_sel else self.pc + 4
+    def control_unit(self, alu_result: int) -> None:
+        self.pc = alu_result if self.flags.pc_sel else self.pc + 4
 
     def main_loop(self) -> None:
         while self.registers[31] != 0xDEADBEEF:
+            self.flags.clear()
             instruction = self.instruction_fetch(self.pc)
 
             # XXX: example programs don't properly halt
@@ -323,8 +316,8 @@ class Processor:
                 )
             else:
                 mem_result = 0
-            self.write_back(mem_result, alu_result, decoded.rd_number, decoded.flags.wb_sel)
-            self.control_unit(decoded.flags.pc_sel, alu_result)
+            self.write_back(mem_result, alu_result, decoded.rd_number)
+            self.control_unit(alu_result)
 
             self.clock += 1
 
