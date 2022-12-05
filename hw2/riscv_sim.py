@@ -1,4 +1,5 @@
 from typing import Iterable, Literal
+from enum import IntEnum
 
 REGISTERS = 32
 IMEM_SIZE = 32 * 1024
@@ -21,6 +22,11 @@ class int32(int):
             return self - 2**32  # negative
         else:
             return self  # non-negative
+
+
+class WBSelector(IntEnum):
+    MEMORY = 0
+    ALU = 1
 
 
 class Processor:
@@ -54,8 +60,12 @@ class Processor:
             data = int.from_bytes(self.dmem[address:address+4], BYTE_ORDER)
         return data
 
-    def write_back(self, address: int, address_rd: int, reg_wen: int) -> int:
-        raise NotImplementedError
+    def write_back(self, memory: int, alu: int, register: int, selector: WBSelector) -> None:
+        match selector:
+            case WBSelector.MEMORY:
+                self.registers[register] = int32.from_int(memory)
+            case WBSelector.ALU:
+                self.registers[register] = int32.from_int(alu)
 
     def control_unit(self, instruction: int, br_equal: int, br_less_than: int) -> int:
         raise NotImplementedError
@@ -90,7 +100,7 @@ class Processor:
             self.instruction_decode(0, 0)
             self.execute(0, 0, 0)
             self.memory(0, 0, False)
-            self.write_back(0, 0, 0)
+            self.write_back(0, 0, 0, WBSelector.MEMORY)
             self.control_unit(0, 0, 0)
 
             self.clock += 1
