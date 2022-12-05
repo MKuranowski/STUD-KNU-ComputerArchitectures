@@ -29,6 +29,20 @@ class WBSelector(IntEnum):
     ALU = 1
 
 
+class ALUSelector(IntEnum):
+    # NOTE: Values the following format `(funct7 << 4) | funct3` (of R-instructions)
+    ADD = 0x0
+    SUB = 0x200
+    XOR = 0x4
+    OR = 0x6
+    AND = 0x7
+    SLL = 0x1
+    SRL = 0x5
+    MUL = 0x10
+    DIV = 0x14
+    REM = 0x16
+
+
 class Processor:
     __slots__ = ("clock", "pc", "registers", "imem", "dmem", "touched_memory")
 
@@ -48,8 +62,28 @@ class Processor:
     def instruction_decode(self, address_rs1: int, address_rs2: int) -> int:
         raise NotImplementedError
 
-    def execute(self, a: int, b: int, alu_selector: int) -> int:
-        raise NotImplementedError
+    def execute(self, a: int, b: int, alu_selector: ALUSelector) -> int:
+        match alu_selector:
+            case ALUSelector.ADD:
+                return a + b
+            case ALUSelector.SUB:
+                return a - b
+            case ALUSelector.XOR:
+                return a ^ b
+            case ALUSelector.OR:
+                return a | b
+            case ALUSelector.AND:
+                return a & b
+            case ALUSelector.SLL:
+                return a << b
+            case ALUSelector.SRL:
+                return a >> b
+            case ALUSelector.MUL:
+                return a * b
+            case ALUSelector.DIV:
+                return a // b
+            case ALUSelector.REM:
+                return a % b
 
     def memory(self, address: int, data: int, do_write: bool) -> int:
         # NOTE: Always reads/writes words
@@ -98,7 +132,7 @@ class Processor:
         while self.registers[31] != 0xDEADBEEF:
             self.instruction_fetch(self.pc)
             self.instruction_decode(0, 0)
-            self.execute(0, 0, 0)
+            self.execute(0, 0, ALUSelector.ADD)
             self.memory(0, 0, False)
             self.write_back(0, 0, 0, WBSelector.MEMORY)
             self.control_unit(0, 0, 0)
