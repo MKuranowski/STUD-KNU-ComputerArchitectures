@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Iterable, Literal, NamedTuple
+from typing import Iterable, Literal, NamedTuple, IO, Iterator
+from contextlib import contextmanager
 from enum import IntEnum
+import sys
 
 REGISTERS = 32
 IMEM_SIZE = 32 * 1024
@@ -73,7 +75,7 @@ class ControlFlags:
     a_sel: bool = False   # If True, use PC instead of decoded `a` for ALU input
     b_sel: bool = False   # If True, use IMM instead of decoded `b` for ALU input
     br_un: bool = False   # If True, use unsigned comparison instead of signed
-    wb_sel: WBSelector = WBSelector.NONE
+    wb_sel: WBSelector = WBSelector.NONE  # Decides which value to store in dest register
 
 
 class DecodedInstruction(NamedTuple):
@@ -118,7 +120,7 @@ class Processor:
 
     @staticmethod
     def reconstruct_i_imm(i: int) -> int:
-        return sign_extend((i >> 20) & 0xFFF, 12)
+        return (i >> 20) & 0xFFF
 
     @staticmethod
     def reconstruct_u_imm(i: int) -> int:
@@ -128,7 +130,7 @@ class Processor:
     def reconstruct_s_imm(i: int) -> int:
         bits_0_4 = (i >> 7) & 0x1F
         bits_5_11 = (i >> 25) & 0x7F
-        return sign_extend((bits_5_11 << 5) | bits_0_4, 12)
+        return (bits_5_11 << 5) | bits_0_4
 
     @staticmethod
     def reconstruct_b_imm(i: int) -> int:
@@ -136,13 +138,10 @@ class Processor:
         bits_5_10 = (i >> 25) & 0x1F
         bit_11 = (i >> 7) & 0x1
         bit_12 = (i >> 31) & 0x1
-        return sign_extend(
-            (bits_1_4 << 1)
-            | (bits_5_10 << 5)
-            | (bit_11 << 11)
-            | (bit_12 << 12),
-            13,
-        )
+        return (bits_1_4 << 1) \
+            | (bits_5_10 << 5) \
+            | (bit_11 << 11) \
+            | (bit_12 << 12)
 
     @staticmethod
     def reconstruct_j_imm(i: int) -> int:
@@ -150,13 +149,10 @@ class Processor:
         bit_11 = (i >> 19) & 0x1
         bits_12_19 = (i >> 12) & 0xFF
         bit_20 = (i >> 31) & 0x1
-        return sign_extend(
-            (bits_1_10 << 1)
-            | (bit_11 << 11)
-            | (bits_12_19 << 12)
-            | (bit_20 << 20),
-            21,
-        )
+        return (bits_1_10 << 1) \
+            | (bit_11 << 11) \
+            | (bits_12_19 << 12) \
+            | (bit_20 << 20)
 
     def instruction_decode(self, instruction: int) -> DecodedInstruction:
         op = OP(instruction & 0b111_1111)
@@ -310,6 +306,24 @@ class Processor:
     def control_unit(self, pc_sel: bool, alu_result: int) -> None:
         self.pc = alu_result if pc_sel else self.pc + 4
 
+    def main_loop(self) -> None:
+        while self.registers[31] != 0xDEADBEEF:
+            instruction = self.instruction_fetch(self.pc)
+            decoded = self.instruction_decode(instruction)
+            alu_result = self.execute(decoded)
+            if decoded.op == OP.STORE or decoded.op == OP.LOAD:
+                mem_result = self.memory(
+                    alu_result,
+                    decoded.rs2_value.as_unsigned(),
+                    decoded.op == OP.STORE,
+                )
+            else:
+                mem_result = 0
+            self.write_back(mem_result, alu_result, decoded.rd_number, decoded.flags.wb_sel)
+            self.control_unit(decoded.flags.pc_sel, alu_result)
+
+            self.clock += 1
+
     def reset_state(self) -> None:
         self.clock = 0
         self.pc = 0
@@ -334,24 +348,6 @@ class Processor:
             print(f"{touched_address:x} : {self.dmem[touched_address]}")
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-    def main_loop(self) -> None:
-        while self.registers[31] != 0xDEADBEEF:
-            instruction = self.instruction_fetch(self.pc)
-            decoded = self.instruction_decode(instruction)
-            alu_result = self.execute(decoded)
-            if decoded.op == OP.STORE or decoded.op == OP.LOAD:
-                mem_result = self.memory(
-                    alu_result,
-                    decoded.rs2_value.as_unsigned(),
-                    decoded.op == OP.STORE,
-                )
-            else:
-                mem_result = 0
-            self.write_back(mem_result, alu_result, decoded.rd_number, decoded.flags.wb_sel)
-            self.control_unit(decoded.flags.pc_sel, alu_result)
-
-            self.clock += 1
-
     def load_program(self, program: Iterable[str]) -> None:
         address = 0
         for line in program:
@@ -366,3 +362,17 @@ class Processor:
         self.print_statistics()
         self.dump_registers()
         self.dump_memory()
+
+
+@contextmanager
+def input_or_stdin() -> Iterator[IO[str]]:
+    if len(sys.argv) < 2:
+        yield sys.stdin
+    else:
+        with open(sys.argv[1], "r") as f:
+            yield f
+
+
+if __name__ == "__main__":
+    with input_or_stdin() as f:
+        Processor().run(f)
