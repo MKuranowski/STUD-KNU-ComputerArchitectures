@@ -36,6 +36,24 @@ def sign_extend(x: int, bits: int) -> int:
         return x
 
 
+def div_towards_zero(a: int, b: int) -> int:
+    # NOTE: Python uses different rounding compared with RISC-V expects
+    # Source: https://stackoverflow.com/a/61386872
+    if (a >= 0) != (b >= 0) and a % b:
+        return a // b + 1
+    else:
+        return a // b
+
+
+def mod_towards_zero(a: int, b: int) -> int:
+    # NOTE: Python uses different rounding compared with RISC-V expects
+    # Source: https://stackoverflow.com/a/61346631
+    if b < 0:
+        b = -b
+    return -1 * (-a % b) if a < 0 else a % b
+
+
+
 class WBSelector(IntEnum):
     NONE = 0
     ALU = 1
@@ -232,7 +250,7 @@ class Processor:
         return DecodedInstruction(op, funct, rs1_value, rs2_value, rd_number, imm)
 
     @staticmethod
-    def run_alu(a: int, b: int, alu_selector: ALUSelector) -> int:
+    def run_alu(a: int32, b: int32, alu_selector: ALUSelector) -> int:
         match alu_selector:
             case ALUSelector.ADD:
                 return a + b
@@ -249,11 +267,11 @@ class Processor:
             case ALUSelector.SRL:
                 return a >> b
             case ALUSelector.MUL:
-                return a * b
+                return a.as_signed() * b.as_signed()
             case ALUSelector.DIV:
-                return a // b
+                return div_towards_zero(a.as_signed(), b.as_signed())
             case ALUSelector.REM:
-                return a % b
+                return mod_towards_zero(a.as_signed(), b.as_signed())
 
     def run_branch_selector(self, i: DecodedInstruction) -> None:
         # Perform the comparison
@@ -279,8 +297,8 @@ class Processor:
             self.run_branch_selector(i)
 
         return self.run_alu(
-            self.pc if self.flags.a_sel else i.rs1_value.as_unsigned(),
-            i.imm if self.flags.b_sel else i.rs2_value.as_unsigned(),
+            int32.from_int(self.pc) if self.flags.a_sel else i.rs1_value,
+            int32.from_int(i.imm) if self.flags.b_sel else i.rs2_value,
             ALUSelector(i.funct),
         )
 
