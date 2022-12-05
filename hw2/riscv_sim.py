@@ -27,6 +27,15 @@ class int32(int):
             return self  # non-negative
 
 
+def sign_extend(x: int, bits: int) -> int:
+    assert x < 2**bits, f"{x} is wider than {bits} bits"
+    if x & (1 << (bits - 1)):
+        # MSB set - negative
+        return x - 2**bits
+    else:
+        return x
+
+
 class WBSelector(IntEnum):
     NONE = 0
     ALU = 1
@@ -113,19 +122,22 @@ class Processor:
     def instruction_fetch(self, address: int) -> int:
         return int.from_bytes(self.imem[address : address + 4], BYTE_ORDER)
 
+    # NOTE: With irrelevant for this simulator exceptions, all immediate values are
+    #       sign extended. See section 2.2 of RISC-V Instruction Set Manual.
+
     @staticmethod
     def reconstruct_i_imm(i: int) -> int:
-        return (i >> 20) & 0xFFF
+        return sign_extend((i >> 20) & 0xFFF, 12)
 
     @staticmethod
     def reconstruct_u_imm(i: int) -> int:
-        return i & 0xFFFF_F000
+        return sign_extend(i & 0xFFFF_F000, 32)
 
     @staticmethod
     def reconstruct_s_imm(i: int) -> int:
         bits_0_4 = (i >> 7) & 0x1F
         bits_5_11 = (i >> 25) & 0x7F
-        return (bits_5_11 << 5) | bits_0_4
+        return sign_extend((bits_5_11 << 5) | bits_0_4, 12)
 
     @staticmethod
     def reconstruct_b_imm(i: int) -> int:
@@ -133,7 +145,10 @@ class Processor:
         bits_5_10 = (i >> 25) & 0x1F
         bit_11 = (i >> 7) & 0x1
         bit_12 = (i >> 31) & 0x1
-        return (bits_1_4 << 1) | (bits_5_10 << 5) | (bit_11 << 11) | (bit_12 << 12)
+        return sign_extend(
+            (bits_1_4 << 1) | (bits_5_10 << 5) | (bit_11 << 11) | (bit_12 << 12),
+            13,
+        )
 
     @staticmethod
     def reconstruct_j_imm(i: int) -> int:
@@ -141,7 +156,10 @@ class Processor:
         bit_11 = (i >> 19) & 0x1
         bits_12_19 = (i >> 12) & 0xFF
         bit_20 = (i >> 31) & 0x1
-        return (bits_1_10 << 1) | (bit_11 << 11) | (bits_12_19 << 12) | (bit_20 << 20)
+        return sign_extend(
+            (bits_1_10 << 1) | (bit_11 << 11) | (bits_12_19 << 12) | (bit_20 << 20),
+            21,
+        )
 
     def instruction_decode(self, instruction: int) -> DecodedInstruction:
         op = OP(instruction & 0b111_1111)
@@ -303,7 +321,7 @@ class Processor:
 
             # XXX: example programs don't properly halt
             if not instruction:
-                print("\x1B[31mProgram halted without 0xDEADBEEF in x31\x1B[0m", file=sys.stderr)
+                # print("\x1B[31mProgram halted without 0xDEADBEEF in x31\x1B[0m", file=sys.stderr)
                 return
 
             decoded = self.instruction_decode(instruction)
@@ -325,6 +343,7 @@ class Processor:
         self.clock = 0
         self.pc = 0
         self.registers = [int32.from_int(0) for _ in range(REGISTERS)]
+        self.flags = ControlFlags()
         self.imem = bytearray(IMEM_SIZE)
         self.dmem = bytearray(DMEM_SIZE)
         self.touched_memory = set()
