@@ -20,13 +20,13 @@ _fp_read = open(riscv_asm, "r")
 _fp_write = open(machine_code, "w")
 
 r_format = ['add', 'sub', 'mul', 'div', 'rem', 'or', 'xor', 'and', 'sll', 'srl']
-i_format = ['lw', 'addi', 'slli', 'srli', 'xori', 'xori', 'ori', 'andi', 'jalr']
+i_format = ['lw', 'addi', 'slli', 'srli', 'xori', 'ori', 'andi', 'jalr']
 u_format = ['lui', 'auipc']
 s_format = ['sw']
 b_format = ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']
 
 r_inst = ['0000000000', '0010100000', '0000001000', '0000001100', '0000001110', '0000000110', '0000000100', '0000000111', '0000000001', '0000000101']
-i_inst = ['0100000011', '0000010011', '0010010011', '1010010011', '1000010011', '1100010011', '1110010011']
+i_inst = ['0100000011', '0000010011', '0010010011', '1010010011', '1000010011', '1100010011', '1110010011', '0001100111']
 u_inst = ['0110111', '0010111']
 b_inst = ['000', '001', '100', '101', '110', '111']
 
@@ -43,6 +43,9 @@ _fp_read.seek(0)
 line_cnt = 0
 for line in _fp_read:
     line_cnt += 1
+    if '(' in line:
+        # jalr x12, 128(x1)
+        line = line.split(',')[0] + ', ' + line.split(',')[1].split('(')[1].split(')')[0] + ', ' + line.split(',')[1].lstrip().split('(')[0]
     if ':' in line:
         temp = re.split(r', | |\n', line[line.index(':')+1:])
         del temp[0]
@@ -54,7 +57,7 @@ for line in _fp_read:
         rs2 = format(bin(int(temp[3][1:]))[2:], '0>5')
         rd = format(bin(int(temp[1][1:]))[2:], '0>5')
         i = r_format.index(mnemonic)
-        _fp_write.write(r_inst[i][:8] + rs2 + rs1 + r_inst[i][8:] + rd + '0110011')
+        _fp_write.write(r_inst[i][:7] + rs2 + rs1 + r_inst[i][7:] + rd + '0110011')
     elif mnemonic in i_format:
         rd1 = format(bin(int(temp[1][1:]))[2:], '0>5')
         rs1 = format(bin(int(temp[2][1:]))[2:], '0>5')
@@ -70,7 +73,6 @@ for line in _fp_read:
         rs1 = format(bin(int(temp[1][1:]))[2:], '0>5')
         rs2 = format(bin(int(temp[2][1:]))[2:], '0>5')
         imm = twos_com((labels[temp[3]] - line_cnt) * 4)
-        print(imm)
         i = b_format.index(mnemonic)
         _fp_write.write(imm[-13] + imm[-11:-5] + rs2 + rs1 + b_inst[i] + imm[-5:-1] + imm[-12] + '1100011')
     elif mnemonic in s_format:
