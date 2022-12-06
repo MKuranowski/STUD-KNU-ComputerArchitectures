@@ -79,7 +79,7 @@ for line in _fp_read:
         rs1 = format(bin(int(temp[1][1:]))[2:], '0>5')
         rs2 = format(bin(int(temp[2][1:]))[2:], '0>5')
         imm = twos_com(int(temp[3]))
-        i = b_format.index(mnemonic)
+        i = s_format.index(mnemonic)
         _fp_write.write(imm[-12:-5] + rs2 + rs1 + '010' + imm[-5:] + '0100011')
     elif mnemonic == 'jal':
         rd1 = format(bin(int(temp[1][1:]))[2:], '0>5')

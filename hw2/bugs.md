@@ -1,3 +1,4 @@
 - [ ] riscv_sim.{c,py} - halting condition not satisfied
 - [ ] deadbeef.S - invalid immediate, as they are sign extended
-- [ ] assembler.py - can't encode `sub` instructions (should be `"0100000" "000"`)
+- [ ] assembler.py - wrong binary for `sub` instructions (should be `"0100000" "000"`)
+- [ ]              - error when assembling `sw`
