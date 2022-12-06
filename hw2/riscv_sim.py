@@ -86,6 +86,7 @@ class BranchSelector(IntEnum):
 
 
 class OP(IntEnum):
+    INVALID = 0
     ALU_REG = 0b0110011
     ALU_IMM = 0b0010011
     LOAD = 0b0000011
@@ -188,6 +189,9 @@ class Processor:
         imm = 0
 
         match op:
+            case OP.INVALID:
+                raise RuntimeError(f"Invalid Instruction at 0x{self.pc:x} ({instruction:08x})")
+
             case OP.ALU_REG:  # R-Type instructions
                 funct = (((instruction >> 25) & 0x7F) << 4) | ((instruction >> 12) & 0b111)
                 rs1_value = self.registers[(instruction >> 15) & 0b1_1111]
@@ -336,12 +340,6 @@ class Processor:
         while self.registers[31] != 0xDEADBEEF:
             self.flags.clear()
             instruction = self.instruction_fetch(self.pc)
-
-            # XXX: example programs don't properly halt
-            if not instruction:
-                # print("\x1B[31mProgram halted without 0xDEADBEEF in x31\x1B[0m", file=sys.stderr)
-                return
-
             decoded = self.instruction_decode(instruction)
             alu_result = self.execute(decoded)
             if decoded.op == OP.STORE or decoded.op == OP.LOAD:
