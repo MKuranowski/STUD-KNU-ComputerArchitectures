@@ -13,9 +13,9 @@
 [x] XOR (tested in arithmetic.s)
 [x] AND (tested in arithmetic.s)
 [x] OR (tested in arithmetic.s)
-[ ] MUL
-[ ] DIV
-[ ] REM
+[x] MUL
+[x] DIV
+[x] REM
 [ ] LW
 [ ] SW
 [ ] BEQ
@@ -26,6 +26,13 @@
 [ ] BGEU
 [ ] JAL
 [ ] JALR
+
+## write_to_zero.s
+
+```
+x0 <= 42
+```
+
 
 ## immideates.s
 
@@ -84,11 +91,51 @@ NOTE: Python uses different rounding compared to what RISC-V expects.
 
 ## overflow.s
 
-TODO!
+Checks for proper 32-bit wraparound.
+
+```
+x20 = 97411312   = ( 23782 << 12) + 240
+x21 = 1699649273 = (414953 << 12) + 1785
+x22 = 2147483647 = (     1 << 31) - 1
+
+x1 = 97411312 * 97411312 = 2264195328
+x2 = 1699649273 * 1699649273 = -758858191
+x3 = 2147483647 + 1 = -2147483648
+x4 = 1946 << 24 = -1711276032
+x5 = 1946 >> 24 = 0
+```
+
+NOTE: x20 and x21 are both deliberately chosen so that `X & 0xFFFF_F7FF == X` -
+and so that they can be loaded with LUI and ADDI in a straightforward manner,
+without sign extension of the latter causing any problems.
 
 ## memory.s
 
-TODO!
+NOTE: Assuming little endian
+
+```
+x20 = -1
+x21 = 42
+x25 = 0x54
+
+[mem]
+0x50 : 0x2A
+0x51 : 0x00
+0x52 : 0x00
+0x53 : 0x00
+0x54 : 0xFF
+0x55 : 0xFF
+0x56 : 0xFF
+0x57 : 0xFF
+0x58 : 0x2A
+0x59 : 0x00
+0x60 : 0x00
+0x61 : 0x00
+
+x1 = word[0x54] = -1
+x2 = word[0x58] = 42
+x3 = word[0x50] = 42
+```
 
 ## branches.s
 
