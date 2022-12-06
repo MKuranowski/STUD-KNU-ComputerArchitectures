@@ -160,7 +160,7 @@ class Processor:
     @staticmethod
     def reconstruct_b_imm(i: int) -> int:
         bits_1_4 = (i >> 8) & 0xF
-        bits_5_10 = (i >> 25) & 0x1F
+        bits_5_10 = (i >> 25) & 0x3F
         bit_11 = (i >> 7) & 0x1
         bit_12 = (i >> 31) & 0x1
         return sign_extend(
