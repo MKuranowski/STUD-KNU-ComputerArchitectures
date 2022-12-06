@@ -1,6 +1,6 @@
 #!/bin/sh
 
-tests="immediates arithmetic write_to_zero mul overflow memory branches"
+tests="write_to_zero immediates arithmetic mul overflow memory branches jump_and_link"
 tests_count=$(echo "$tests" | wc -w | sed -e 's/^[[:space:]]*//')
 n=1
 ret_code=0

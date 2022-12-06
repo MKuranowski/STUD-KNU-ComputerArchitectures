@@ -1,33 +1,35 @@
-[x] SLLI (tested in immediates.s)
-[x] SRLI (tested in immediates.s)
-[x] ADDI (tested in immediates.s)
-[x] AUIPC (tested in immediates.s)
-[x] XORI (tested in immediates.s)
-[x] ANDI (tested in immediates.s)
-[x] ORI (tested in immediates.s)
-[x] ADD (tested in arithmetic.s)
-[x] SUB (tested in arithmetic.s)
-[x] SLL (tested in arithmetic.s)
-[x] SRL (tested in arithmetic.s)
-[x] LUI (tested in arithmetic.s)
-[x] XOR (tested in arithmetic.s)
-[x] AND (tested in arithmetic.s)
-[x] OR (tested in arithmetic.s)
-[x] MUL (tested in mul.s)
-[x] DIV (tested in mul.s)
-[x] REM (tested in mul.s)
-[x] LW (tested in memory.s)
-[x] SW (tested in memory.s)
-[x] BEQ (tested in branches.s)
-[x] BNE (tested in branches.s)
-[x] BLT (tested in branches.s)
-[x] BGE (tested in branches.s)
-[x] BLTU (tested in branches.s)
-[x] BGEU (tested in branches.s)
-[ ] JAL
-[ ] JALR
+# Tested instructions
 
-## Halting
+- [x] SLLI (in immediates.s)
+- [x] SRLI (in immediates.s)
+- [x] ADDI (in immediates.s)
+- [x] AUIPC (in immediates.s)
+- [x] XORI (in immediates.s)
+- [x] ANDI (in immediates.s)
+- [x] ORI (in immediates.s)
+- [x] ADD (in arithmetic.s)
+- [x] SUB (in arithmetic.s)
+- [x] SLL (in arithmetic.s)
+- [x] SRL (in arithmetic.s)
+- [x] LUI (in arithmetic.s)
+- [x] XOR (in arithmetic.s)
+- [x] AND (in arithmetic.s)
+- [x] OR (in arithmetic.s)
+- [x] MUL (in mul.s)
+- [x] DIV (in mul.s)
+- [x] REM (in mul.s)
+- [x] LW (in memory.s)
+- [x] SW (in memory.s)
+- [x] BEQ (in branches.s)
+- [x] BNE (in branches.s)
+- [x] BLT (in branches.s)
+- [x] BGE (in branches.s)
+- [x] BLTU (in branches.s)
+- [x] BGEU (in branches.s)
+- [x] JAL (in jump_and_link.s)
+- [x] JALR (in jump_and_link.s)
+
+# Halting
 
 As per the assignment, the machine shall halt if `x31 == 0xDEADBEEF`.
 
@@ -38,12 +40,13 @@ lui x31, 912092
 addi x31, x31, -273
 ```
 
+# Tests
+
 ## write_to_zero.s
 
 ```
 x0 <= 42
 ```
-
 
 ## immediates.s
 
@@ -116,7 +119,7 @@ x4 = 1946 << 24 = -1711276032
 x5 = 1946 >> 24 = 0
 ```
 
-NOTE: x20 and x21 are both deliberately chosen so that `X & 0xFFFF_F7FF == X` -
+NOTE: x20 and x21 are both deliberately chosen so that `X & 0x0000_0800 == 0` -
 and so that they can be loaded with LUI and ADDI in a straightforward manner,
 without sign extension of the latter causing any problems.
 
@@ -186,4 +189,22 @@ x21 should be -1
 
 ## jump_and_link.s
 
-TODO!
+```
+        x10 = 12 (setterA)
+        setterA()  ; sets x11; returns to [x1]
+        goto over  ; also sets x9 = setterZ
+over:   setterB()  ; sets x12; returns to [x2]
+        setterC()  ; sets x13; returns to [x3]
+        setterZ()  ; sets x14; returns to [x4]
+```
+
+x1  = 8  
+x2  = 48  
+x3  = 52  
+x4  = 56  
+x9  = 12  
+x10 = 20  
+x11 = 1  
+x12 = 1  
+x13 = 1  
+x14 = 1  
