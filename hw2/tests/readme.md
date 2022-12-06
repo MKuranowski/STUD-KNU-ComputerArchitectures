@@ -18,12 +18,12 @@
 [x] REM (tested in mul.s)
 [x] LW (tested in memory.s)
 [x] SW (tested in memory.s)
-[ ] BEQ
-[ ] BNE
-[ ] BLT
-[ ] BGE
-[ ] BLTU
-[ ] BGEU
+[x] BEQ (tested in branches.s)
+[x] BNE (tested in branches.s)
+[x] BLT (tested in branches.s)
+[x] BGE (tested in branches.s)
+[x] BLTU (tested in branches.s)
+[x] BGEU (tested in branches.s)
 [ ] JAL
 [ ] JALR
 
@@ -129,7 +129,49 @@ x3 = word[0x50] = 42
 
 ## branches.s
 
-TODO!
+```
+x25 = 1
+x26 = 42
+x27 = -42 = 4294967254
+
+    if (1 == 1) goto A
+    x1 = 1   ; should not be set
+A:  if (1 == 42) goto B
+    x11 = 1  ; should be set
+B:  if (1 != 42) goto C
+    x2 = 1   ; should not be set
+C:  if (42 != 42) goto D
+    x12 = 1  ; should be set
+D:  if (-42 < 1) goto E
+    x3 = 1   ; should not be set
+E:  if (1 < -42) goto F
+    x13 = 1  ; should be set
+F:  if (1 >= 1) goto G
+    x4 = 1   ; should not be set
+G:  if (42 >= 1) goto H
+    x9 = 1   ; should not be set
+H:  if (-42 >= 1) goto I
+    x14 = 1  ; should be set
+I:  if (1 <u 4294967254) goto J
+    x5 = 1   ; should not be set
+J:  if (42 <u 1) goto K
+    x15 = 1  ; should be set
+K: if (1 >=u 1) goto L
+    x6 = 1   ; should not be set
+L: if (4294967254 >=u 42) goto M
+    x8 = 1   ; should not be set
+M: if (42 >=u 4294967254) goto N
+    x16 = 1  ; should be set
+N: x21 = 10
+loop: x20 += x21
+x21 -= 1
+if (x21 >= 0) goto loop
+```
+
+x1 ~ x9 should all be zeros  
+x11 ~ x16 should all be ones  
+x20 should be 55  
+x21 should be -1
 
 ## jump_and_link.s
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-tests="immediates arithmetic write_to_zero mul overflow memory"
+tests="immediates arithmetic write_to_zero mul overflow memory branches"
 tests_count=$(echo "$tests" | wc -w | sed -e 's/^[[:space:]]*//')
 n=1
 
