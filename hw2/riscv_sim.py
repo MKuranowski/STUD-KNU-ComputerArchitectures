@@ -171,8 +171,8 @@ class Processor:
 
     @staticmethod
     def reconstruct_j_imm(i: int) -> int:
-        bits_1_10 = (i >> 20) & 0x3FF
-        bit_11 = (i >> 19) & 0x1
+        bits_1_10 = (i >> 21) & 0x3FF
+        bit_11 = (i >> 20) & 0x1
         bits_12_19 = (i >> 12) & 0xFF
         bit_20 = (i >> 31) & 0x1
         return sign_extend(
@@ -190,7 +190,7 @@ class Processor:
 
         match op:
             case OP.INVALID:
-                raise RuntimeError(f"Invalid Instruction at 0x{self.pc:x} ({instruction:08x})")
+                raise RuntimeError(f"Invalid Instruction at 0x{self.pc:x} (0x{instruction:08x})")
 
             case OP.ALU_REG:  # R-Type instructions
                 funct = (((instruction >> 25) & 0x7F) << 4) | ((instruction >> 12) & 0b111)
