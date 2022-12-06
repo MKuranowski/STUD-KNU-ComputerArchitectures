@@ -5,7 +5,7 @@
 [x] XORI (tested in immediates.s)
 [x] ANDI (tested in immediates.s)
 [x] ORI (tested in immediates.s)
-[x] ADD (tested in arithmetic.s )
+[x] ADD (tested in arithmetic.s)
 [x] SUB (tested in arithmetic.s)
 [x] SLL (tested in arithmetic.s)
 [x] SRL (tested in arithmetic.s)
@@ -13,9 +13,9 @@
 [x] XOR (tested in arithmetic.s)
 [x] AND (tested in arithmetic.s)
 [x] OR (tested in arithmetic.s)
-[x] MUL
-[x] DIV
-[x] REM
+[x] MUL (tested in mul.s)
+[x] DIV (tested in mul.s)
+[x] REM (tested in mul.s)
 [ ] LW
 [ ] SW
 [ ] BEQ
@@ -34,7 +34,7 @@ x0 <= 42
 ```
 
 
-## immideates.s
+## immediates.s
 
 ```
 x31 = 0 + (5800<<12) = 23756800
@@ -119,18 +119,18 @@ x21 = 42
 x25 = 0x54
 
 [mem]
-0x50 : 0x2A
-0x51 : 0x00
-0x52 : 0x00
-0x53 : 0x00
-0x54 : 0xFF
-0x55 : 0xFF
-0x56 : 0xFF
-0x57 : 0xFF
-0x58 : 0x2A
-0x59 : 0x00
-0x60 : 0x00
-0x61 : 0x00
+0x50 : 42
+0x51 : 0
+0x52 : 0
+0x53 : 0
+0x54 : 255
+0x55 : 255
+0x56 : 255
+0x57 : 255
+0x58 : 42
+0x59 : 0
+0x5a : 0
+0x5b : 0
 
 x1 = word[0x54] = -1
 x2 = word[0x58] = 42
