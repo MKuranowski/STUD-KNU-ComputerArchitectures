@@ -16,8 +16,8 @@
 [x] MUL (tested in mul.s)
 [x] DIV (tested in mul.s)
 [x] REM (tested in mul.s)
-[ ] LW
-[ ] SW
+[x] LW (tested in memory.s)
+[x] SW (tested in memory.s)
 [ ] BEQ
 [ ] BNE
 [ ] BLT
@@ -118,19 +118,9 @@ x20 = -1
 x21 = 42
 x25 = 0x54
 
-[mem]
-0x50 : 42
-0x51 : 0
-0x52 : 0
-0x53 : 0
-0x54 : 255
-0x55 : 255
-0x56 : 255
-0x57 : 255
-0x58 : 42
-0x59 : 0
-0x5a : 0
-0x5b : 0
+word[0x54] = -1
+word[0x58] = 42
+word[0x50] = 42
 
 x1 = word[0x54] = -1
 x2 = word[0x58] = 42
