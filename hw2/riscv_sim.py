@@ -7,7 +7,7 @@ import sys
 REGISTERS = 32
 IMEM_SIZE = 32 * 1024
 DMEM_SIZE = 32 * 1024
-BYTE_ORDER: Literal["big", "little"] = "big"
+BYTE_ORDER: Literal["big", "little"] = "little"
 
 
 class int32(int):
@@ -253,19 +253,19 @@ class Processor:
     def run_alu(a: int32, b: int32, alu_selector: ALUSelector) -> int:
         match alu_selector:
             case ALUSelector.ADD:
-                return a + b
+                return a.as_signed() + b.as_signed()
             case ALUSelector.SUB:
-                return a - b
+                return a.as_signed() - b.as_signed()
             case ALUSelector.XOR:
-                return a ^ b
+                return a.as_unsigned() ^ b.as_unsigned()
             case ALUSelector.OR:
-                return a | b
+                return a.as_unsigned() | b.as_unsigned()
             case ALUSelector.AND:
-                return a & b
+                return a.as_unsigned() & b.as_unsigned()
             case ALUSelector.SLL:
-                return a << b
+                return a.as_unsigned() << b.as_unsigned()
             case ALUSelector.SRL:
-                return a >> b
+                return a.as_unsigned() >> b.as_unsigned()
             case ALUSelector.MUL:
                 return a.as_signed() * b.as_signed()
             case ALUSelector.DIV:
@@ -299,14 +299,14 @@ class Processor:
         return self.run_alu(
             int32.from_int(self.pc) if self.flags.a_sel else i.rs1_value,
             int32.from_int(i.imm) if self.flags.b_sel else i.rs2_value,
-            ALUSelector(i.funct),
+            ALUSelector(i.funct) if i.op in {OP.ALU_REG, OP.ALU_IMM} else ALUSelector.ADD,
         )
 
     def memory(self, address: int, data: int, do_write: bool) -> int:
         # NOTE: Always reads/writes words
         if do_write:
             self.dmem[address : address + 4] = int32(data).to_bytes(4, BYTE_ORDER)
-            self.touched_memory.union(range(address, address + 4))
+            self.touched_memory.update(range(address, address + 4))
         else:
             data = int.from_bytes(
                 self.dmem[address : address + 4],
