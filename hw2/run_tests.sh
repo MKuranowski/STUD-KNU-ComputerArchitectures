@@ -1,5 +1,6 @@
 #!/bin/sh
 
+prog="${SIMULATOR:-python3 riscv_sim.py}"
 tests="write_to_zero immediates arithmetic mul overflow memory branches jump_and_link"
 tests_count=$(echo "$tests" | wc -w | sed -e 's/^[[:space:]]*//')
 n=1
@@ -9,7 +10,7 @@ echo TAP Version 14
 echo 1..$tests_count
 
 for test in $tests; do
-    diff_result=$(python3 assembler.py "tests/$test.s" | python3 riscv_sim.py | diff - "tests/$test.out")
+    diff_result=$(python3 assembler.py "tests/$test.s" | $prog | diff - "tests/$test.out")
     if [ $? -eq 0 ]; then
         echo ok $n - $test
     else
