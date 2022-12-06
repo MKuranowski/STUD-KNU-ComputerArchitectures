@@ -14,3 +14,5 @@ mul x9, x23, x22
 div x10, x22, x21
 rem x11, x22, x21
 mul x12, x22, x21
+lui x31, 912092
+addi x31, x31, -273

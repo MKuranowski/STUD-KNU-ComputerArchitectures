@@ -27,6 +27,17 @@
 [ ] JAL
 [ ] JALR
 
+## Halting
+
+As per the assignment, the machine shall halt if `x31 == 0xDEADBEEF`.
+
+To set x31 to 0xDEADBEEF the following sequence is used:
+
+```
+lui x31, 912092
+addi x31, x31, -273
+```
+
 ## write_to_zero.s
 
 ```
@@ -37,7 +48,7 @@ x0 <= 42
 ## immediates.s
 
 ```
-x31 = 0 + (5800<<12) = 23756800
+x30 = 0 + (5800<<12) = 23756800
 x1 = 10 + 20 - 1 = 29
 x2 = 2 << 6 = 128
 x3 = 45 >> 2 = 11

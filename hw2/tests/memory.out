@@ -1,6 +1,6 @@
-Processor's clock cycles: 9
+Processor's clock cycles: 11
 >>>>>>>>[REGISTER DUMP]<<<<<<<
-PC: = 36
+PC: = 44
 x00 = 0
 x01 = -1
 x02 = 42
@@ -32,7 +32,7 @@ x27 = 0
 x28 = 0
 x29 = 0
 x30 = 0
-x31 = 0
+x31 = -559038737
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 >>>>>>>>[MEMORY DUMP]<<<<<<<<<
 50 : 42

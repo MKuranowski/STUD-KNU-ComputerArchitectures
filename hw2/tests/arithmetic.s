@@ -13,3 +13,5 @@ srl x4, x23, x24
 xor x5, x20, x21
 and x6, x20, x21
 or x7, x20, x21
+lui x31, 912092
+addi x31, x31, -273

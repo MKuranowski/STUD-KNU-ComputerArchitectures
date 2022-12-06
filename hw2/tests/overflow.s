@@ -12,3 +12,5 @@ addi x4, x0, 1946
 slli x4, x4, 24
 addi x5, x0, 1946
 srli x5, x5, 24
+lui x31, 912092
+addi x31, x31, -273

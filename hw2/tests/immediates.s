@@ -1,4 +1,4 @@
-auipc, x31, 5800
+auipc, x30, 5800
 addi x1, x0, 10
 addi x1, x1, 20
 addi x1, x1, -1
@@ -12,3 +12,5 @@ addi x5, x0, 819
 andi x5, x5, 341
 addi x6, x0, 819
 ori x6, x6, 341
+lui x31, 912092
+addi x31, x31, -273

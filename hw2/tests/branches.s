@@ -33,3 +33,5 @@ N: addi x21, x0, 10
 loop: add x20, x20, x21
 addi x21, x21, -1
 bge x21, x0, loop
+lui x31, 912092
+addi x31, x31, -273
