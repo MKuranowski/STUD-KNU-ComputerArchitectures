@@ -1,4 +1,6 @@
 - [ ] riscv_sim.{c,py} - halting condition not satisfied
 - [ ] deadbeef.S - invalid immediate, as they are sign extended
+    should be `lui x31, 0xDEADC; addi x31, x31, 0xEEF`; aka:
+    `lui x31, 912092; addi x31, x31, -273`
 - [ ] assembler.py - wrong binary for `sub` instructions (should be `"0100000" "000"`)
 - [ ]              - error when assembling `sw`
