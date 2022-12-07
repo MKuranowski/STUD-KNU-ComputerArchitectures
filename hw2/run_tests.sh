@@ -1,6 +1,6 @@
 #!/bin/sh
 
-prog="${SIMULATOR:-python3 riscv_sim.py}"
+prog="${SIMULATOR:-./riscv_sim}"
 tests="write_to_zero immediates arithmetic mul overflow memory branches jump_and_link"
 tests_count=$(echo "$tests" | wc -w | sed -e 's/^[[:space:]]*//')
 n=1
@@ -25,4 +25,4 @@ for test in $tests; do
     n=$(( n + 1 ))
 done
 
-return $ret_code
+exit $ret_code
