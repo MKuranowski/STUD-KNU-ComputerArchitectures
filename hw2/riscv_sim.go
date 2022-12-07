@@ -122,7 +122,7 @@ type decodedInstruction struct {
 
 func (p *Processor) InstructionFetch(address uint32) uint32 {
 	if address%4 != 0 {
-		panic(fmt.Errorf("misaligned instruction fetch from %08x", address))
+		panic(fmt.Errorf("misaligned instruction fetch from 0x%08x", address))
 	}
 	return ByteOrder.Uint32(p.IMem[address : address+4])
 }
@@ -131,7 +131,7 @@ func (p *Processor) InstructionDecode(instruction uint32) (d decodedInstruction)
 	d.op = uint8(instruction & 0x7F)
 	switch d.op {
 	case OperationInvalid:
-		panic(fmt.Errorf("invalid instruction at PC=%08x", p.PC))
+		panic(fmt.Errorf("invalid instruction at PC=0x%08x", p.PC))
 
 	case OperationALUReg: // R-type
 		d.funct = uint16(((instruction >> 21) & 0x7F0) | ((instruction >> 12) & 0x7))
@@ -193,7 +193,7 @@ func (p *Processor) InstructionDecode(instruction uint32) (d decodedInstruction)
 		p.Flags.WBSelector = WBSelectorALU
 
 	default:
-		panic(fmt.Errorf("unexpected op %02x at %08x", d.op, p.PC))
+		panic(fmt.Errorf("unexpected op 0x%02x at 0x%08x", d.op, p.PC))
 	}
 	return
 }
@@ -259,7 +259,7 @@ func (p *Processor) executeALU(d decodedInstruction) uint32 {
 	case ALUSelectorREM:
 		return uint32(int32(a) % int32(b))
 	default:
-		panic(fmt.Errorf("invalid ALU selector: %03x", s))
+		panic(fmt.Errorf("invalid ALU selector: 0x%03x", s))
 	}
 }
 
@@ -274,7 +274,7 @@ func (p *Processor) Execute(d decodedInstruction) uint32 {
 func (p *Processor) Memory(address, data uint32, doWrite bool) uint32 {
 	// NOTE: Assuming only word load/stores are permitted
 	if address%4 != 0 {
-		panic(fmt.Errorf("misaligned memory access to %08x at PC=%08x", address, p.PC))
+		panic(fmt.Errorf("misaligned memory access to 0x%08x at PC=0x%08x", address, p.PC))
 	}
 
 	if doWrite {
