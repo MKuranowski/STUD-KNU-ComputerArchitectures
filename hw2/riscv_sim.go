@@ -1,5 +1,10 @@
 package main
 
+// Student: Mikolaj Kuranowski
+// Student ID: 2020427681
+// Date: 2022-12-08
+// Course: Computer Architectures
+
 import (
 	"bufio"
 	"encoding/binary"
@@ -24,6 +29,7 @@ const (
 	WBSelectorPCPlus4
 )
 
+// ALUSelectors are combined with this equation: `(funct7 << 4) | funct3`
 const (
 	ALUSelectorADD = 0x000
 	ALUSelectorSUB = 0x200
@@ -37,6 +43,7 @@ const (
 	ALUSelectorREM = 0x016
 )
 
+// BranchSelectors simply represent the value of `funct3` in BRANCH instructions
 const (
 	BranchSelectorEQ  = 0x0
 	BranchSelectorNE  = 0x1
@@ -213,7 +220,7 @@ func (p *Processor) executeBranchSelector(d decodedInstruction) {
 	case BranchSelectorGEU:
 		p.Flags.PCSel = d.rs1Value >= d.rs2Value
 	default:
-		panic(fmt.Errorf("invalid branch selector: %x", d.funct))
+		panic(fmt.Errorf("invalid branch selector: 0x%x", d.funct))
 	}
 }
 
